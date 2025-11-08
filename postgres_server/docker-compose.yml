@@ -14,7 +14,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_DB: game_chooser_db
     volumes:
-      - ${POSTGRES_DATA_PATH}:/var/lib/postgresql/data
+      - ${POSTGRES_DATA_PATH}:/var/lib/postgresql
       - ${POSTGRES_DATA_PATH}/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
 
     # set shared memory limit when using docker compose
