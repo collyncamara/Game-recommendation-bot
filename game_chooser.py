@@ -112,8 +112,6 @@ def post_to_discord(game_name):
 
     thumbnail_url = get_game_thumbnail(game_name)
     embed = {
-        "username": "🎮 Game Picker Bot",
-        "avatar_url": "https://cdn-icons-png.flaticon.com/512/2331/2331852.png", 
         "title": "🎮 Weekly Game Pick!",
         "description": f"This week’s game is **{game_name}**!",
         "color": 0x7289DA,  # Discord blurple
