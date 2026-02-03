@@ -64,6 +64,39 @@ def load_games_from_csv(conn, csv_path="games.csv"):
 
     print(f"Games loaded from CSV: {added} added, {skipped} skipped")
 
+
+def remove_stale_games(conn, csv_path="games.csv"):
+    """
+    Removes games from the database that are not present in the provided CSV.
+    This keeps the `games` table in sync with the CSV list.
+    """
+    if not os.path.exists(csv_path):
+        print(f"CSV file not found: {csv_path} — not removing any games.")
+        return
+
+    csv_names = set()
+    with open(csv_path, newline='', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        if "name" not in reader.fieldnames:
+            print("CSV missing required 'name' column header. Skipping stale removal.")
+            return
+        for row in reader:
+            name = row["name"].strip()
+            if name:
+                csv_names.add(name)
+
+    with conn.cursor() as cur:
+        cur.execute("SELECT name FROM games;")
+        db_names = [r[0] for r in cur.fetchall()]
+        stale = [n for n in db_names if n not in csv_names]
+        if not stale:
+            print("No stale games to remove.")
+            return
+
+        cur.execute("DELETE FROM games WHERE name = ANY(%s);", (stale,))
+    conn.commit()
+    print(f"Removed {len(stale)} games no longer present in CSV.")
+
 def get_games(conn):
     with conn.cursor() as cur:
         cur.execute("SELECT name, times_selected FROM games;")
@@ -134,7 +167,9 @@ def post_to_discord(game_name):
 def main():
     conn = psycopg2.connect(**DB_CONFIG)
 
-    # Load any new games from CSV first
+    # Remove any games from the database that are no longer listed in the CSV,
+    # then load any new games from the CSV to ensure the DB mirrors the CSV.
+    remove_stale_games(conn, "games.csv")
     load_games_from_csv(conn, "games.csv")
 
     games = get_games(conn)
